@@ -60,7 +60,7 @@ public class LoginActivity extends AppCompatActivity  implements View.OnClickLis
             @Override
             public void onChanged(FeedBack feedBack) {
                 if(feedBack.getSuccess()){
-                    Toast.makeText(getApplicationContext(),"Success", Toast.LENGTH_SHORT).show();
+                    startMain();
                 }else {
                     Toast.makeText(getApplicationContext(),feedBack.getMessage(), Toast.LENGTH_SHORT).show();
                 }
@@ -71,12 +71,16 @@ public class LoginActivity extends AppCompatActivity  implements View.OnClickLis
             @Override
             public void onChanged(Boolean logged) {
                 if (logged) {
-                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                    startActivity(intent);
-                    finish();
+                    startMain();
                 }
             }
         });
+    }
+
+    private void startMain() {
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        startActivity(intent);
+        finish();
     }
 
     private void verifyUserLogged() {

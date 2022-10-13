@@ -4,12 +4,20 @@ import android.app.Application;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
+import com.example.tasks.service.listener.APIListeners;
+import com.example.tasks.service.listener.FeedBack;
+import com.example.tasks.service.model.PersonModel;
 import com.example.tasks.service.repository.PersonRepository;
 
 public class RegisterViewModel extends AndroidViewModel {
 
     private PersonRepository mPersonRepository;
+
+    private MutableLiveData<FeedBack> mCreate = new MutableLiveData<>();
+    public LiveData<FeedBack> create = this.mCreate;
 
     public RegisterViewModel(@NonNull Application application) {
         super(application);
@@ -17,7 +25,17 @@ public class RegisterViewModel extends AndroidViewModel {
     }
 
     public void create(String name, String email, String password) {
-        this.mPersonRepository.create(name,email,password);
+        this.mPersonRepository.create(name, email, password, new APIListeners<PersonModel>() {
+            @Override
+            public void onSuccess(PersonModel result) {
+                mCreate.setValue(new FeedBack());
+            }
+
+            @Override
+            public void onFailure(String message) {
+                mCreate.setValue(new FeedBack(message));
+            }
+        });
 
     }
 }

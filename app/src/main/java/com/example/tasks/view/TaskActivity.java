@@ -4,11 +4,13 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
+import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.Spinner;
 
@@ -16,9 +18,10 @@ import com.example.tasks.R;
 import com.example.tasks.viewmodel.TaskViewModel;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Locale;
 
-public class TaskActivity extends AppCompatActivity implements View.OnClickListener {
+public class TaskActivity extends AppCompatActivity implements View.OnClickListener, DatePickerDialog.OnDateSetListener {
 
     private SimpleDateFormat mFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
     private ViewHolder mViewHolder = new ViewHolder();
@@ -52,12 +55,22 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View view) {
         switch (view.getId()){
             case R.id.btn_date:
-
+                this.showDatePicker();
                 break;
             case R.id.btn_save:
 
                 break;
         }
+    }
+
+    private void showDatePicker() {
+
+        Calendar calendar = Calendar.getInstance();
+        int year =  calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+        new DatePickerDialog(this,this, year,month,day).show();
     }
 
     @Override
@@ -79,6 +92,14 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     private void loadObservers() {
     }
 
+    @Override
+    public void onDateSet(DatePicker datePicker, int year, int month, int day) {
+        Calendar c = Calendar.getInstance();
+        c.set(year, month, day);
+
+        String date = this.mFormat.format(c.getTime());
+        this.mViewHolder.btnDate.setText(date);
+    }
 
 
     /**

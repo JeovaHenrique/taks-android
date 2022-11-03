@@ -30,7 +30,7 @@ public interface TaskService {
 
     @FormUrlEncoded
     @POST("Task")
-    Call<PersonModel> create(
+    Call<Boolean> create(
             @Field("PriorityId") int priorityId,
             @Field("Description") String description,
             @Field("DueDate") String dueDate,
@@ -38,7 +38,7 @@ public interface TaskService {
 
     @FormUrlEncoded
     @PUT("Task")
-    Call<PersonModel> update(
+    Call<Boolean> update(
             @Field("Id") int id,
             @Field("PriorityId") int priorityId,
             @Field("Description") String description,
@@ -47,11 +47,11 @@ public interface TaskService {
 
     @FormUrlEncoded
     @PUT("Task/Complete")
-    Call<PersonModel> complete(@Field("Id") int id);
+    Call<Boolean> complete(@Field("Id") int id);
 
     @FormUrlEncoded
     @PUT("Task/Undo")
-    Call<PersonModel> undo(@Field("Id") int id);
+    Call<Boolean> undo(@Field("Id") int id);
 
     @FormUrlEncoded
     @HTTP(method = "DELETE", path = "Taks", hasBody = true)

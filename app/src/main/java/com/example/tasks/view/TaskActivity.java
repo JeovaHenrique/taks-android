@@ -18,6 +18,7 @@ import android.widget.Spinner;
 
 import com.example.tasks.R;
 import com.example.tasks.service.model.PriorityModel;
+import com.example.tasks.service.model.TaskModel;
 import com.example.tasks.viewmodel.TaskViewModel;
 
 import java.text.SimpleDateFormat;
@@ -31,6 +32,7 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     private SimpleDateFormat mFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
     private ViewHolder mViewHolder = new ViewHolder();
     private TaskViewModel mViewModel;
+    private List<Integer> mListPriorityId = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,9 +67,20 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                 this.showDatePicker();
                 break;
             case R.id.btn_save:
-
+                this.handlerSave();
                 break;
         }
+    }
+
+    private void handlerSave() {
+        TaskModel task = new TaskModel();
+
+        task.setDescription(this.mViewHolder.textDescription.getText().toString());
+        task.setComplete(this.mViewHolder.checkComplete.isChecked());
+        task.setDueDate(this.mViewHolder.btnDate.getText().toString());
+        task.setPriorityId(this.mListPriorityId.get(this.mViewHolder.spinnerPriority.getSelectedItemPosition()));
+
+        this.mViewModel.save(task);
     }
 
 
@@ -118,6 +131,7 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         List<String> listPriority = new ArrayList<>();
         for(PriorityModel l : list) {
             listPriority.add(l.getDescription());
+            mListPriorityId.add(l.getId());
         }
 
         ArrayAdapter adapter = new ArrayAdapter(getApplicationContext(),

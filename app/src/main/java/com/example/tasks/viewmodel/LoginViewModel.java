@@ -8,7 +8,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.tasks.service.listener.APIListeners;
-import com.example.tasks.service.listener.FeedBack;
+import com.example.tasks.service.listener.Feedback;
 import com.example.tasks.service.model.PersonModel;
 import com.example.tasks.service.model.PriorityModel;
 import com.example.tasks.service.repository.PersonRepository;
@@ -21,8 +21,8 @@ public class LoginViewModel extends AndroidViewModel {
     private PersonRepository mPersonRepository;
     private PriorityRepository mPriorityRepository;
 
-    private MutableLiveData<FeedBack> mLogin = new MutableLiveData<>();
-    public LiveData<FeedBack> login = this.mLogin;
+    private MutableLiveData<Feedback> mLogin = new MutableLiveData<>();
+    public LiveData<Feedback> login = this.mLogin;
 
     private MutableLiveData<Boolean> mUserLogged = new MutableLiveData<>();
     public LiveData<Boolean> userLogged = this.mUserLogged;
@@ -40,12 +40,12 @@ public class LoginViewModel extends AndroidViewModel {
 
                 mPersonRepository.saveUserData(result);
 
-                mLogin.setValue(new FeedBack());
+                mLogin.setValue(new Feedback());
             }
 
             @Override
             public void onFailure(String message) {
-                mLogin.setValue(new FeedBack(message));
+                mLogin.setValue(new Feedback(message));
             }
         });
 
@@ -53,8 +53,10 @@ public class LoginViewModel extends AndroidViewModel {
 
     public void verifyUserLogged() {
         PersonModel model = this.mPersonRepository.getUserData();
-
         boolean logger = !"".equals(model.getName());
+
+        this.mPersonRepository.saveUserData(model);
+
         if(!logger) {
             this.mPriorityRepository.all(new APIListeners<List<PriorityModel>>() {
                 @Override

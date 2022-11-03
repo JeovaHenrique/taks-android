@@ -1,13 +1,13 @@
 package com.example.tasks.service.listener;
 
-public class FeedBack {
+public class Feedback {
     private Boolean success = true;
     private String message = "";
 
-    public FeedBack() {
+    public Feedback() {
     }
 
-    public FeedBack(String message) {
+    public Feedback(String message) {
         this.message = message;
         this.success = false;
     }

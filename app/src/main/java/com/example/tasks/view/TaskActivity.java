@@ -15,15 +15,20 @@ import android.widget.CheckBox;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.example.tasks.R;
+import com.example.tasks.service.constants.TaskConstants;
+import com.example.tasks.service.listener.Feedback;
 import com.example.tasks.service.model.PriorityModel;
 import com.example.tasks.service.model.TaskModel;
 import com.example.tasks.viewmodel.TaskViewModel;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -31,8 +36,9 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
 
     private SimpleDateFormat mFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
     private ViewHolder mViewHolder = new ViewHolder();
-    private TaskViewModel mViewModel;
     private List<Integer> mListPriorityId = new ArrayList<>();
+    private TaskViewModel mViewModel;
+    private int mTaskId = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,79 +50,84 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
-        this.mViewHolder.textDescription = findViewById(R.id.text_description);
+        this.mViewHolder.editDescription = findViewById(R.id.text_description);
         this.mViewHolder.spinnerPriority = findViewById(R.id.spin_priority);
         this.mViewHolder.checkComplete = findViewById(R.id.check_completed);
-        this.mViewHolder.btnDate = findViewById(R.id.btn_date);
-        this.mViewHolder.btnSave = findViewById(R.id.btn_save);
+        this.mViewHolder.buttonDate = findViewById(R.id.btn_date);
+        this.mViewHolder.buttonSave = findViewById(R.id.btn_save);
 
         // ViewModel
         this.mViewModel = new ViewModelProvider(this).get(TaskViewModel.class);
 
-        this.listeners();
+        this.createEvents();
+
         // Cria observadores
         this.loadObservers();
         this.mViewModel.getList();
 
+        this.loadDataFromActivity();
     }
 
     @Override
-    public void onClick(View view) {
-        switch (view.getId()){
-            case R.id.btn_date:
-                this.showDatePicker();
-                break;
-            case R.id.btn_save:
-                this.handlerSave();
-                break;
+    public void onClick(View v) {
+        int id = v.getId();
+        if (id == R.id.btn_date) {
+            this.showDatePicker();
+        } else if (id == R.id.btn_save) {
+            this.handleSave();
         }
     }
 
-    private void handlerSave() {
-        TaskModel task = new TaskModel();
-
-        task.setDescription(this.mViewHolder.textDescription.getText().toString());
-        task.setComplete(this.mViewHolder.checkComplete.isChecked());
-        task.setDueDate(this.mViewHolder.btnDate.getText().toString());
-        task.setPriorityId(this.mListPriorityId.get(this.mViewHolder.spinnerPriority.getSelectedItemPosition()));
-
-        this.mViewModel.save(task);
-    }
-
-
     @Override
-    public void onDateSet(DatePicker datePicker, int year, int month, int day) {
+    public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
         Calendar c = Calendar.getInstance();
-        c.set(year, month, day);
+        c.set(year, month, dayOfMonth);
 
         String date = this.mFormat.format(c.getTime());
-        this.mViewHolder.btnDate.setText(date);
-    }
-
-    private void showDatePicker() {
-
-        Calendar calendar = Calendar.getInstance();
-        int year =  calendar.get(Calendar.YEAR);
-        int month = calendar.get(Calendar.MONTH);
-        int day = calendar.get(Calendar.DAY_OF_MONTH);
-
-        new DatePickerDialog(this,this, year,month,day).show();
+        this.mViewHolder.buttonDate.setText(date);
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if(item.getItemId() == android.R.id.home) {
+        if (item.getItemId() == android.R.id.home) {
             onBackPressed();
         }
         return super.onOptionsItemSelected(item);
     }
 
-    private void listeners() {
-        this.mViewHolder.btnDate.setOnClickListener(this);
-        this.mViewHolder.btnSave.setOnClickListener(this);
+    private void loadDataFromActivity() {
+        Bundle bundle = getIntent().getExtras();
+        if (bundle != null) {
+            this.mTaskId = bundle.getInt(TaskConstants.BUNDLE.TASKID);
+            mViewHolder.buttonSave.setText(this.getString(R.string.update_task));
+            this.mViewModel.load(this.mTaskId);
+        }
     }
 
+    private void handleSave() {
+        TaskModel task = new TaskModel();
 
+        task.setId(this.mTaskId);
+        task.setDescription(this.mViewHolder.editDescription.getText().toString());
+        task.setComplete(this.mViewHolder.checkComplete.isChecked());
+        task.setDueDate(this.mViewHolder.buttonDate.getText().toString());
+        task.setPriorityId(this.mListPriorityId.get(this.mViewHolder.spinnerPriority.getSelectedItemPosition()));
+
+        this.mViewModel.save(task);
+    }
+
+    private void showDatePicker() {
+        Calendar c = Calendar.getInstance();
+        int year = c.get(Calendar.YEAR);
+        int month = c.get(Calendar.MONTH);
+        int day = c.get(Calendar.DAY_OF_MONTH);
+
+        new DatePickerDialog(this, this, year, month, day).show();
+    }
+
+    /**
+     * Observadores
+     */
     private void loadObservers() {
         this.mViewModel.listPriority.observe(this, new Observer<List<PriorityModel>>() {
             @Override
@@ -124,26 +135,82 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                 loadSpinner(list);
             }
         });
+
+        this.mViewModel.task.observe(this, new Observer<TaskModel>() {
+            @Override
+            public void onChanged(TaskModel taskModel) {
+                mViewHolder.editDescription.setText(taskModel.getDescription());
+                mViewHolder.checkComplete.setChecked(taskModel.getComplete());
+                mViewHolder.spinnerPriority.setSelection(getIndex(taskModel.getPriorityId()));
+
+                try {
+                    Date date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(taskModel.getDueDate());
+                    mViewHolder.buttonDate.setText(mFormat.format(date));
+                } catch (ParseException e) {
+                    mViewHolder.buttonDate.setText("--");
+                }
+            }
+        });
+
+        this.mViewModel.feedback.observe(this, new Observer<Feedback>() {
+            @Override
+            public void onChanged(Feedback feedback) {
+                if (feedback.getSuccess()) {
+                    if (mTaskId == 0) {
+                        toast(getApplicationContext().getString(R.string.task_created));
+                    } else {
+                        toast(getApplicationContext().getString(R.string.task_updated));
+                    }
+                    finish();
+                } else {
+                    toast(feedback.getMessage());
+                }
+            }
+        });
     }
 
-    private void loadSpinner(List<PriorityModel> list){
+    private void toast(String msg) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+    }
 
-        List<String> listPriority = new ArrayList<>();
-        for(PriorityModel l : list) {
-            listPriority.add(l.getDescription());
-            mListPriorityId.add(l.getId());
+    private int getIndex(int priorityId) {
+        int index = 0;
+        for (int i = 0; i < this.mListPriorityId.size(); i++) {
+            if (this.mListPriorityId.get(i) == priorityId) {
+                index = i;
+                break;
+            }
+        }
+
+        return index;
+    }
+
+    private void loadSpinner(List<PriorityModel> list) {
+        List<String> lstPriorities = new ArrayList<>();
+
+        for (PriorityModel p : list) {
+            lstPriorities.add(p.getDescription());
+            this.mListPriorityId.add(p.getId());
         }
 
         ArrayAdapter adapter = new ArrayAdapter(getApplicationContext(),
-                android.R.layout.simple_spinner_dropdown_item, listPriority);
+                android.R.layout.simple_spinner_dropdown_item, lstPriorities);
         this.mViewHolder.spinnerPriority.setAdapter(adapter);
     }
 
+    private void createEvents() {
+        this.mViewHolder.buttonDate.setOnClickListener(this);
+        this.mViewHolder.buttonSave.setOnClickListener(this);
+    }
+
+    /**
+     * ViewHolder
+     */
     private static class ViewHolder {
-        EditText textDescription;
+        EditText editDescription;
         Spinner spinnerPriority;
         CheckBox checkComplete;
-        Button btnDate;
-        Button btnSave;
+        Button buttonDate;
+        Button buttonSave;
     }
 }

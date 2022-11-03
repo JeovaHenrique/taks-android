@@ -1,6 +1,5 @@
 package com.example.tasks.service.repository.remote;
 
-import com.example.tasks.service.model.PersonModel;
 import com.example.tasks.service.model.TaskModel;
 
 import java.util.List;
@@ -54,7 +53,7 @@ public interface TaskService {
     Call<Boolean> undo(@Field("Id") int id);
 
     @FormUrlEncoded
-    @HTTP(method = "DELETE", path = "Taks", hasBody = true)
+    @HTTP(method = "DELETE", path = "Task", hasBody = true)
     Call<Boolean> delete(@Field("Id") int id);
 
 }

@@ -12,7 +12,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.tasks.R;
-import com.example.tasks.service.listener.FeedBack;
+import com.example.tasks.service.listener.Feedback;
 import com.example.tasks.viewmodel.LoginViewModel;
 
 public class LoginActivity extends AppCompatActivity  implements View.OnClickListener{
@@ -56,9 +56,9 @@ public class LoginActivity extends AppCompatActivity  implements View.OnClickLis
     }
 
     private void loadObservers() {
-        this.mLoginViewModel.login.observe(this, new Observer<FeedBack>() {
+        this.mLoginViewModel.login.observe(this, new Observer<Feedback>() {
             @Override
-            public void onChanged(FeedBack feedBack) {
+            public void onChanged(Feedback feedBack) {
                 if(feedBack.getSuccess()){
                     startMain();
                 }else {

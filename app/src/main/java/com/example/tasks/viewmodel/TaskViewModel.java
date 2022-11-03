@@ -8,7 +8,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.tasks.service.listener.APIListeners;
-import com.example.tasks.service.listener.FeedBack;
+import com.example.tasks.service.listener.Feedback;
 import com.example.tasks.service.model.PriorityModel;
 import com.example.tasks.service.model.TaskModel;
 import com.example.tasks.service.repository.PriorityRepository;
@@ -24,30 +24,55 @@ public class TaskViewModel extends AndroidViewModel {
     private MutableLiveData<List<PriorityModel>> mListPriority = new MutableLiveData<>();
     public LiveData<List<PriorityModel>> listPriority = this.mListPriority;
 
-    private MutableLiveData<FeedBack> mTaskSave = new MutableLiveData<>();
-    public LiveData<FeedBack> taskSave = this.mTaskSave;
+    private MutableLiveData<TaskModel> mTask = new MutableLiveData<>();
+    public LiveData<TaskModel> task = this.mTask;
+
+    private MutableLiveData<Feedback> mFeedback = new MutableLiveData<>();
+    public LiveData<Feedback> feedback = this.mFeedback;
 
     public TaskViewModel(@NonNull Application application) {
         super(application);
         this.mPriorityRepository = new PriorityRepository(application);
+        this.mTaskRepository = new TaskRepository(application);
     }
 
     public void getList() {
-        List<PriorityModel> list = this.mPriorityRepository.getList();
-        this.mListPriority.setValue(list);
+        List<PriorityModel> lst = this.mPriorityRepository.getList();
+        this.mListPriority.setValue(lst);
     }
 
-    public void save(TaskModel task) {
-        this.mTaskRepository.save(task, new APIListeners<Boolean>() {
+    public void load(int id) {
+        this.mTaskRepository.load(id, new APIListeners<TaskModel>() {
             @Override
-            public void onSuccess(Boolean result) {
-                mTaskSave.setValue(new FeedBack());
+            public void onSuccess(TaskModel result) {
+                mTask.setValue(result);
             }
 
             @Override
             public void onFailure(String message) {
-                mTaskSave.setValue(new FeedBack(message));
+                mFeedback.setValue(new Feedback(message));
             }
         });
     }
+
+    public void save(TaskModel task) {
+        APIListeners<Boolean> listener = new APIListeners<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                mFeedback.setValue(new Feedback());
+            }
+
+            @Override
+            public void onFailure(String message) {
+                mFeedback.setValue(new Feedback(message));
+            }
+        };
+
+        if (task.getId() == 0) {
+            this.mTaskRepository.create(task, listener);
+        } else {
+            this.mTaskRepository.update(task, listener);
+        }
+    }
+
 }

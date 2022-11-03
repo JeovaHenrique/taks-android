@@ -2,12 +2,14 @@ package com.example.tasks.view;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.DatePicker;
@@ -15,10 +17,13 @@ import android.widget.EditText;
 import android.widget.Spinner;
 
 import com.example.tasks.R;
+import com.example.tasks.service.model.PriorityModel;
 import com.example.tasks.viewmodel.TaskViewModel;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Locale;
 
 public class TaskActivity extends AppCompatActivity implements View.OnClickListener, DatePickerDialog.OnDateSetListener {
@@ -49,6 +54,8 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         this.listeners();
         // Cria observadores
         this.loadObservers();
+        this.mViewModel.getList();
+
     }
 
     @Override
@@ -61,6 +68,16 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
 
                 break;
         }
+    }
+
+
+    @Override
+    public void onDateSet(DatePicker datePicker, int year, int month, int day) {
+        Calendar c = Calendar.getInstance();
+        c.set(year, month, day);
+
+        String date = this.mFormat.format(c.getTime());
+        this.mViewHolder.btnDate.setText(date);
     }
 
     private void showDatePicker() {
@@ -86,25 +103,28 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         this.mViewHolder.btnSave.setOnClickListener(this);
     }
 
-    /**
-     * Observadores
-     */
+
     private void loadObservers() {
+        this.mViewModel.listPriority.observe(this, new Observer<List<PriorityModel>>() {
+            @Override
+            public void onChanged(List<PriorityModel> list) {
+                loadSpinner(list);
+            }
+        });
     }
 
-    @Override
-    public void onDateSet(DatePicker datePicker, int year, int month, int day) {
-        Calendar c = Calendar.getInstance();
-        c.set(year, month, day);
+    private void loadSpinner(List<PriorityModel> list){
 
-        String date = this.mFormat.format(c.getTime());
-        this.mViewHolder.btnDate.setText(date);
+        List<String> listPriority = new ArrayList<>();
+        for(PriorityModel l : list) {
+            listPriority.add(l.getDescription());
+        }
+
+        ArrayAdapter adapter = new ArrayAdapter(getApplicationContext(),
+                android.R.layout.simple_spinner_dropdown_item, listPriority);
+        this.mViewHolder.spinnerPriority.setAdapter(adapter);
     }
 
-
-    /**
-     * ViewHolder
-     */
     private static class ViewHolder {
         EditText textDescription;
         Spinner spinnerPriority;

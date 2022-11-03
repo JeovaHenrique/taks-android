@@ -49,6 +49,10 @@ public class PriorityRepository extends BaseRepository {
 
     }
 
+    public List<PriorityModel> getList() {
+        return this.mPriorityDAO.list();
+    }
+
     public void save(List<PriorityModel> list) {
         this.mPriorityDAO.clear();
         this.mPriorityDAO.save(list);

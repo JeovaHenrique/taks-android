@@ -33,13 +33,16 @@ public class LoginViewModel extends AndroidViewModel {
         this.mPriorityRepository = new PriorityRepository(application);
     }
 
-    public void login(String email, String password) {
+    public void login(final String email, String password) {
         this.mPersonRepository.login(email, password, new APIListeners<PersonModel>() {
             @Override
             public void onSuccess(PersonModel result) {
 
+                // Salvo os dados de login
+                result.setEmail(email);
                 mPersonRepository.saveUserData(result);
 
+                // Informo sucesso
                 mLogin.setValue(new Feedback());
             }
 
@@ -48,16 +51,17 @@ public class LoginViewModel extends AndroidViewModel {
                 mLogin.setValue(new Feedback(message));
             }
         });
-
     }
 
     public void verifyUserLogged() {
         PersonModel model = this.mPersonRepository.getUserData();
-        boolean logger = !"".equals(model.getName());
+        boolean logged = !"".equals(model.getName());
 
+        // Adiciona os headers
         this.mPersonRepository.saveUserData(model);
 
-        if(!logger) {
+        // Usuário não logado
+        if (!logged) {
             this.mPriorityRepository.all(new APIListeners<List<PriorityModel>>() {
                 @Override
                 public void onSuccess(List<PriorityModel> result) {
@@ -66,11 +70,12 @@ public class LoginViewModel extends AndroidViewModel {
 
                 @Override
                 public void onFailure(String message) {
-
+                    // Erro silencioso
                 }
             });
         }
 
-        this.mUserLogged.setValue(logger);
+        this.mUserLogged.setValue(logged);
     }
+
 }

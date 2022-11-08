@@ -13,6 +13,8 @@ public class PersonModel {
     @SerializedName("name")
     private String name;
 
+    private String email;
+
     public String getToken() {
         return token;
     }
@@ -35,5 +37,13 @@ public class PersonModel {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

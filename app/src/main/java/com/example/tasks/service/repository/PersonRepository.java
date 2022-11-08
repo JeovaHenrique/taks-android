@@ -1,9 +1,5 @@
 package com.example.tasks.service.repository;
 
-import static com.example.tasks.service.constants.TaskConstants.SHARED.PERSON_KEY;
-import static com.example.tasks.service.constants.TaskConstants.SHARED.PERSON_NAME;
-import static com.example.tasks.service.constants.TaskConstants.SHARED.TOKEN_KEY;
-
 import android.content.Context;
 
 import com.example.tasks.R;
@@ -13,15 +9,12 @@ import com.example.tasks.service.model.PersonModel;
 import com.example.tasks.service.repository.local.SecurityPreferences;
 import com.example.tasks.service.repository.remote.PersonService;
 import com.example.tasks.service.repository.remote.RetrofitClient;
-import com.google.gson.Gson;
-
-import java.io.IOException;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class PersonRepository extends BaseRepository  {
+public class PersonRepository extends BaseRepository {
 
     private PersonService mPersonService;
     private SecurityPreferences mSecurityPreferences;
@@ -29,62 +22,83 @@ public class PersonRepository extends BaseRepository  {
     public PersonRepository(Context context) {
         super(context);
         this.mPersonService = RetrofitClient.createService(PersonService.class);
-        this.mContext = context;
         this.mSecurityPreferences = new SecurityPreferences(context);
+        this.mContext = context;
     }
 
-    public void create(String name, String email, String password, final APIListeners<PersonModel> listeners) {
+    public void create(String name, String email, String password, final APIListeners<PersonModel> listener) {
+
+        if (!super.isConnectionAvailable()) {
+            listener.onFailure(mContext.getString(R.string.ERROR_INTERNET_CONNECTION));
+            return;
+        }
+
         Call<PersonModel> call = this.mPersonService.create(name, email, password, true);
         call.enqueue(new Callback<PersonModel>() {
             @Override
             public void onResponse(Call<PersonModel> call, Response<PersonModel> response) {
                 if (response.code() == TaskConstants.HTTP.SUCCESS) {
-                        listeners.onSuccess(response.body());
-                    }else {
-                        listeners.onFailure(handlerFailure(response.errorBody()));
+                    listener.onSuccess(response.body());
+                } else  {
+                    listener.onFailure(handleFailure(response.errorBody()));
                 }
             }
 
             @Override
             public void onFailure(Call<PersonModel> call, Throwable t) {
-                listeners.onFailure(mContext.getString(R.string.ERROR_UNEXPECTED));
+                listener.onFailure(mContext.getString(R.string.ERROR_UNEXPECTED));
             }
         });
     }
 
-    public void login(String email, String password, final APIListeners<PersonModel> listeners) {
+    public void login(String email, String password, final APIListeners<PersonModel> listener) {
+
+        if (!super.isConnectionAvailable()) {
+            listener.onFailure(mContext.getString(R.string.ERROR_INTERNET_CONNECTION));
+            return;
+        }
+
         Call<PersonModel> call = this.mPersonService.login(email, password);
         call.enqueue(new Callback<PersonModel>() {
             @Override
             public void onResponse(Call<PersonModel> call, Response<PersonModel> response) {
                 if (response.code() == TaskConstants.HTTP.SUCCESS) {
-                    listeners.onSuccess(response.body());
-                }else {
-                    listeners.onFailure(handlerFailure(response.errorBody()));
+                    listener.onSuccess(response.body());
+                } else {
+                    listener.onFailure(handleFailure(response.errorBody()));
                 }
             }
 
             @Override
             public void onFailure(Call<PersonModel> call, Throwable t) {
-                listeners.onFailure(mContext.getString(R.string.ERROR_UNEXPECTED));
+                listener.onFailure(mContext.getString(R.string.ERROR_UNEXPECTED));
             }
         });
     }
 
     public void saveUserData(PersonModel model) {
-        this.mSecurityPreferences.storedString(TOKEN_KEY, model.getToken());
-        this.mSecurityPreferences.storedString(PERSON_KEY,model.getPersonKey());
-        this.mSecurityPreferences.storedString(PERSON_NAME,model.getName());
+        this.mSecurityPreferences.storedString(TaskConstants.SHARED.TOKEN_KEY, model.getToken());
+        this.mSecurityPreferences.storedString(TaskConstants.SHARED.PERSON_KEY, model.getPersonKey());
+        this.mSecurityPreferences.storedString(TaskConstants.SHARED.PERSON_NAME, model.getName());
+        this.mSecurityPreferences.storedString(TaskConstants.SHARED.PERSON_EMAIL, model.getEmail());
 
         RetrofitClient.saveHeaders(model.getToken(), model.getPersonKey());
     }
 
+    public void clearUserDate() {
+        this.mSecurityPreferences.remove(TaskConstants.SHARED.TOKEN_KEY);
+        this.mSecurityPreferences.remove(TaskConstants.SHARED.PERSON_KEY);
+        this.mSecurityPreferences.remove(TaskConstants.SHARED.PERSON_NAME);
+    }
+
     public PersonModel getUserData() {
         PersonModel model = new PersonModel();
+        model.setName(this.mSecurityPreferences.getStoredString(TaskConstants.SHARED.PERSON_NAME));
+        model.setToken(this.mSecurityPreferences.getStoredString(TaskConstants.SHARED.TOKEN_KEY));
+        model.setPersonKey(this.mSecurityPreferences.getStoredString(TaskConstants.SHARED.PERSON_KEY));
+        model.setEmail(this.mSecurityPreferences.getStoredString(TaskConstants.SHARED.PERSON_EMAIL));
 
-        model.setToken(this.mSecurityPreferences.getStoredString(TOKEN_KEY));
-        model.setName(this.mSecurityPreferences.getStoredString(PERSON_NAME));
-        model.setPersonKey(this.mSecurityPreferences.getStoredString(PERSON_KEY));
         return model;
     }
+
 }

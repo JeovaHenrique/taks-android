@@ -9,13 +9,14 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.tasks.R;
 import com.example.tasks.service.listener.Feedback;
 import com.example.tasks.viewmodel.LoginViewModel;
 
-public class LoginActivity extends AppCompatActivity  implements View.OnClickListener{
+public class LoginActivity extends AppCompatActivity implements View.OnClickListener {
 
     private ViewHolder mViewHolder = new ViewHolder();
     private LoginViewModel mLoginViewModel;
@@ -28,6 +29,7 @@ public class LoginActivity extends AppCompatActivity  implements View.OnClickLis
         this.mViewHolder.textEmail = findViewById(R.id.text_email);
         this.mViewHolder.textPassword = findViewById(R.id.text_password);
         this.mViewHolder.btnLogin = findViewById(R.id.btn_save);
+        this.mViewHolder.textRegister = findViewById(R.id.text_register);
 
         // Incializa as variáveis
         this.mLoginViewModel = new ViewModelProvider(this).get(LoginViewModel.class);
@@ -42,27 +44,31 @@ public class LoginActivity extends AppCompatActivity  implements View.OnClickLis
     @Override
     public void onClick(View view) {
         int id = view.getId();
-        if(id == R.id.btn_save) {
+        if (id == R.id.btn_save) {
             String email = this.mViewHolder.textEmail.getText().toString();
             String password = this.mViewHolder.textPassword.getText().toString();
 
-            this.mLoginViewModel.login(email,password);
+            this.mLoginViewModel.login(email, password);
+        } else if (id == R.id.text_register) {
+            startActivity(new Intent(this,RegisterActivity.class));
         }
 
     }
 
     private void setListeners() {
+
         this.mViewHolder.btnLogin.setOnClickListener(this);
+        this.mViewHolder.textRegister.setOnClickListener(this);
     }
 
     private void loadObservers() {
         this.mLoginViewModel.login.observe(this, new Observer<Feedback>() {
             @Override
             public void onChanged(Feedback feedBack) {
-                if(feedBack.getSuccess()){
+                if (feedBack.getSuccess()) {
                     startMain();
-                }else {
-                    Toast.makeText(getApplicationContext(),feedBack.getMessage(), Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(getApplicationContext(), feedBack.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -91,6 +97,7 @@ public class LoginActivity extends AppCompatActivity  implements View.OnClickLis
         EditText textEmail;
         EditText textPassword;
         Button btnLogin;
+        TextView textRegister;
     }
 
 }

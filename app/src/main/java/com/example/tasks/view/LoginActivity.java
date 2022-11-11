@@ -1,6 +1,9 @@
 package com.example.tasks.view;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.biometric.BiometricPrompt;
+import androidx.core.content.ContextCompat;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -13,8 +16,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.tasks.R;
+import com.example.tasks.service.helper.FingerprintHelper;
 import com.example.tasks.service.listener.Feedback;
 import com.example.tasks.viewmodel.LoginViewModel;
+
+import java.util.concurrent.Executor;
 
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -26,58 +32,89 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        this.mViewHolder.textEmail = findViewById(R.id.text_email);
-        this.mViewHolder.textPassword = findViewById(R.id.text_password);
-        this.mViewHolder.btnLogin = findViewById(R.id.btn_save);
+        this.mViewHolder.editEmail = findViewById(R.id.text_email);
+        this.mViewHolder.editPassword = findViewById(R.id.text_password);
+        this.mViewHolder.buttonLogin = findViewById(R.id.btn_save);
         this.mViewHolder.textRegister = findViewById(R.id.text_register);
 
         // Incializa as variáveis
         this.mLoginViewModel = new ViewModelProvider(this).get(LoginViewModel.class);
 
         this.setListeners();
+
         // Cria observadores
         this.loadObservers();
 
-        this.verifyUserLogged();
+        this.mLoginViewModel.isFingerprintAvailable();
     }
 
     @Override
-    public void onClick(View view) {
-        int id = view.getId();
+    public void onClick(View v) {
+        int id = v.getId();
         if (id == R.id.btn_save) {
-            String email = this.mViewHolder.textEmail.getText().toString();
-            String password = this.mViewHolder.textPassword.getText().toString();
+
+            String email = this.mViewHolder.editEmail.getText().toString();
+            String password = this.mViewHolder.editPassword.getText().toString();
 
             this.mLoginViewModel.login(email, password);
         } else if (id == R.id.text_register) {
-            startActivity(new Intent(this,RegisterActivity.class));
+            startActivity(new Intent(getApplicationContext(), RegisterActivity.class));
         }
+    }
 
+    private void openAuthentication() {
+        // Executor
+        Executor executor = ContextCompat.getMainExecutor(this);
+        // BiometricPrompt
+        BiometricPrompt biometricPrompt = new BiometricPrompt(LoginActivity.this, executor, new BiometricPrompt.AuthenticationCallback() {
+            @Override
+            public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
+                super.onAuthenticationError(errorCode, errString);
+            }
+
+            @Override
+            public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
+                super.onAuthenticationSucceeded(result);
+                startMain();
+            }
+
+            @Override
+            public void onAuthenticationFailed() {
+                super.onAuthenticationFailed();
+            }
+        });
+        // BiometricInfo
+        BiometricPrompt.PromptInfo info = new BiometricPrompt.PromptInfo.Builder()
+                .setTitle(getString(R.string.fp_title))
+                .setDescription(getString(R.string.fp_description))
+                .setNegativeButtonText(getString(R.string.fp_negative))
+                .build();
+
+        biometricPrompt.authenticate(info);
     }
 
     private void setListeners() {
-
-        this.mViewHolder.btnLogin.setOnClickListener(this);
+        this.mViewHolder.buttonLogin.setOnClickListener(this);
         this.mViewHolder.textRegister.setOnClickListener(this);
     }
 
     private void loadObservers() {
         this.mLoginViewModel.login.observe(this, new Observer<Feedback>() {
             @Override
-            public void onChanged(Feedback feedBack) {
-                if (feedBack.getSuccess()) {
+            public void onChanged(Feedback feedback) {
+                if (feedback.getSuccess()) {
                     startMain();
                 } else {
-                    Toast.makeText(getApplicationContext(), feedBack.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), feedback.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             }
         });
 
-        this.mLoginViewModel.userLogged.observe(this, new Observer<Boolean>() {
+        this.mLoginViewModel.fingerprint.observe(this, new Observer<Boolean>() {
             @Override
-            public void onChanged(Boolean logged) {
-                if (logged) {
-                    startMain();
+            public void onChanged(Boolean fingerprintAvailable) {
+                if (fingerprintAvailable) {
+                    openAuthentication();
                 }
             }
         });
@@ -89,14 +126,13 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         finish();
     }
 
-    private void verifyUserLogged() {
-        this.mLoginViewModel.verifyUserLogged();
-    }
-
+    /**
+     * ViewHolder
+     */
     private static class ViewHolder {
-        EditText textEmail;
-        EditText textPassword;
-        Button btnLogin;
+        EditText editEmail;
+        EditText editPassword;
+        Button buttonLogin;
         TextView textRegister;
     }
 

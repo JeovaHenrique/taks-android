@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.example.tasks.service.helper.FingerprintHelper;
 import com.example.tasks.service.listener.APIListeners;
 import com.example.tasks.service.listener.Feedback;
 import com.example.tasks.service.model.PersonModel;
@@ -24,8 +25,8 @@ public class LoginViewModel extends AndroidViewModel {
     private MutableLiveData<Feedback> mLogin = new MutableLiveData<>();
     public LiveData<Feedback> login = this.mLogin;
 
-    private MutableLiveData<Boolean> mUserLogged = new MutableLiveData<>();
-    public LiveData<Boolean> userLogged = this.mUserLogged;
+    private MutableLiveData<Boolean> mFingerprint = new MutableLiveData<>();
+    public LiveData<Boolean> fingerprint = this.mFingerprint;
 
     public LoginViewModel(@NonNull Application application) {
         super(application);
@@ -53,15 +54,19 @@ public class LoginViewModel extends AndroidViewModel {
         });
     }
 
-    public void verifyUserLogged() {
+    public void isFingerprintAvailable() {
         PersonModel model = this.mPersonRepository.getUserData();
-        boolean logged = !"".equals(model.getName());
+        boolean everLogged = !"".equals(model.getName());
 
         // Adiciona os headers
         this.mPersonRepository.saveUserData(model);
 
+        if (FingerprintHelper.isAvailable(getApplication())) {
+            this.mFingerprint.setValue(everLogged);
+        }
+
         // Usuário não logado
-        if (!logged) {
+        if (!everLogged) {
             this.mPriorityRepository.all(new APIListeners<List<PriorityModel>>() {
                 @Override
                 public void onSuccess(List<PriorityModel> result) {
@@ -74,8 +79,6 @@ public class LoginViewModel extends AndroidViewModel {
                 }
             });
         }
-
-        this.mUserLogged.setValue(logged);
     }
 
 }
